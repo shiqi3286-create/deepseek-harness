@@ -1,0 +1,69 @@
+name: Desktop Release (Windows)
+
+# Build the official Electron desktop shell (@deepseek-ai/dsh-desktop) on a
+# GitHub-hosted Windows runner and upload the unsigned NSIS installer to a
+# GitHub Release. Manual-only on purpose: official release artifacts are the
+# result of an explicit act, never a push/PR side effect.
+on:
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: Create the GitHub Release as a draft (review before publish)
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: Resolve package version
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Get-Content apps/desktop/package.json | ConvertFrom-Json).version
+          Write-Output "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Package desktop installer (unsigned, win-x64)
+        run: pnpm package:desktop:win:x64:unsigned
+
+      - name: Upload installer as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desktop-win-x64
+          path: apps/desktop/.desktop-build/targets/win-x64/artifacts/*
+          if-no-files-found: error
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-v${{ steps.version.outputs.version }}
+          name: DeepSeek Harness Desktop ${{ steps.version.outputs.version }}
+          draft: ${{ github.event.inputs.draft == 'true' }}
+          files: apps/desktop/.desktop-build/targets/win-x64/artifacts/*
+          fail_on_unmatched_files: false
