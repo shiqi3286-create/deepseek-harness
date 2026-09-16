@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dsh-desktop-win-x64
-          path: apps/desktop/.desktop-build/targets/win-x64/artifacts/*
+          path: apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*
           if-no-files-found: error
 
       - name: Publish to GitHub Release
@@ -69,5 +69,5 @@ jobs:
           tag_name: desktop-v${{ steps.version.outputs.version }}
           name: DeepSeek Harness Desktop ${{ steps.version.outputs.version }}
           draft: ${{ github.event.inputs.draft == 'true' }}
-          files: apps/desktop/.desktop-build/targets/win-x64/artifacts/*
+          files: apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*
           fail_on_unmatched_files: false
