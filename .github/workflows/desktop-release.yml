@@ -22,6 +22,10 @@ permissions:
 jobs:
   package:
     runs-on: windows-latest
+    env:
+      # electron-builder config requires a reverse-DNS app id; used for the
+      # Windows NSIS package identity. Change here to rebrand the installer.
+      DSH_DESKTOP_APP_ID: ai.deepseek.harness
     steps:
       - name: Checkout (full history)
         uses: actions/checkout@v4
